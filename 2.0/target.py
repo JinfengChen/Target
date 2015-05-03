@@ -17,6 +17,7 @@ import datetime
 import time
 import glob
 import subprocess as subp
+import multiprocessing as mp
 import argparse
 import re
 import fastaIO
@@ -27,6 +28,8 @@ path = str(path) + "/"
 #print "TARGeT path:" + path
 
 #-----------Define functions-----------------------------------------------------
+
+
 
 def frange(x, y, jump):
     frange_list = []
@@ -55,33 +58,55 @@ ident_list4 = frange_convert(ident_list3, 1)
     
 
 def BLASTN(query, blast_file_out):
-    subp.call(["blastall", "-p", "blastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
+    blast_cmd = 'blastall -p blastn -F F -m 0 -d %s -i %s -o %s.blast -e %s -b %s -v %s -a %s' %(str(args.genome), query, str(blast_file_out), str(args.b_e), str(args.b_a), str(args.b_d), str(args.P))
+    os.system(blast_cmd)
+    #subp.call(["blastall", "-p", "blastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
 
-def TBLASTN(query, blast_file_out):
-    subp.call(["blastall", "-p", "tblastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
+def TBLASTN(query, blast_file_out): 
+    blast_cmd = 'blastall -p tblastn -F F -m 0 -d %s -i %s -o %s.blast -e %s -b %s -v %s -a %s' %(str(args.genome), query, str(blast_file_out), str(args.b_e), str(args.b_a), str(args.b_d), str(args.P))
+    os.system(blast_cmd)
+    #subp.call(["blastall", "-p", "tblastn", "-F", "F", "-m", "0", "-d", str(args.genome), "-i", query, "-o", str(blast_file_out) + ".blast", "-e", str(args.b_e), "-b", str(args.b_a), "-v", str(args.b_d), "-a", str(args.P)])
 
 def Blast_draw(blast_file_out):
-    subp.call(["perl", path + "v3_blast_drawer.pl", "-i", str(blast_file_out) + ".blast", "-o", str(blast_file_out)])
+    blast_draw_cmd = 'perl %s/v3_blast_drawer.pl -i %s.blast -o %s' %(path, str(blast_file_out), str(blast_file_out))
+    os.system(blast_draw_cmd)
+    #subp.call(["perl", path + "v3_blast_drawer.pl", "-i", str(blast_file_out) + ".blast", "-o", str(blast_file_out)])
 
 def img_convert(in_file, out_file):
-    subp.call(["convert", in_file, out_file])
+    img_convert_cmd = 'convert %s %s' %(in_file, out_file)
+    os.system(img_convert_cmd)
+    #subp.call(["convert", in_file, out_file])
 
-def PHI(blast_in, PHI_out):
-    subp.call(["perl", path + "PHI_2.4.pl", "-i", blast_in, "-q", query, "-D", args.genome, "-o", PHI_out, "-e", str(args.p_e), "-M", str(args.p_M), "-P", Type, "-d", str(args.p_d), "-g", str(args.p_g), "-n", str(args.p_n), "-c", str(args.p_c), "-G", str(args.p_G), "-t", str(args.p_t), "-f", str(args.p_f), "-p", args.p_p, "-R", realign])
+def PHI(blast_in, PHI_out, query):
+    #print 'PHI check: p_e=%s, p_M=%s, -P=%s' %(str(args.p_e), str(args.p_M), str(args.P))
+    PHI_cmd = 'perl %s/PHI_2.4.pl -i %s -q %s -D %s -o %s -e %s -M %s -P %s -d %s -g %s -n %s -c %s -G %s -t %s -f %s -p %s -R %s' %(path, blast_in, query, args.genome, PHI_out, str(args.p_e), str(args.p_M), Type, str(args.p_d), str(args.p_g), str(args.p_n), str(args.p_c), str(args.p_G), str(args.p_t), str(args.p_f), args.p_p, realign)
+    #print PHI_cmd
+    os.system(PHI_cmd)
+    #subp.call(["perl", path + "PHI_2.4.pl", "-i", blast_in, "-q", query, "-D", args.genome, "-o", PHI_out, "-e", str(args.p_e), "-M", str(args.p_M), "-P", Type, "-d", str(args.p_d), "-g", str(args.p_g), "-n", str(args.p_n), "-c", str(args.p_c), "-G", str(args.p_G), "-t", str(args.p_t), "-f", str(args.p_f), "-p", args.p_p, "-R", realign])
 
 def PHI_draw(PHI_out, Type):
-    subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(600)])
+    PHI_draw_cmd = 'perl %s/PHI_drawer2.pl -i %s.list -o %s.tcf_drawer -m %s -P %s -n %s' %(path, str(PHI_out), str(PHI_out), args.p_t, Type, str(600))
+    os.system(PHI_draw_cmd)
+    #subp.call(["perl", path + "PHI_drawer2.pl", "-i", str(PHI_out) + ".list", "-o", str(PHI_out) + ".tcf_drawer", "-m", args.p_t, "-P", Type, "-n", str(600)])
 
 def MAFFT_NT(in_path, out_path):
-    subp.call(["mafft", "--ep", "0.15", "--op", "1.2", "--thread",  str(args.P), "--localpair", "--maxiterate",  "16", "--out", out_path, in_path])
+    mafft_cmd = 'mafft --ep 0.15 --op 1.2 --thread %s --localpair --maxiterate 16 --out %s %s' %(str(args.P), out_path, in_path)
+    os.system(mafft_cmd)
+    #subp.call(["mafft", "--ep", "0.15", "--op", "1.2", "--thread",  str(args.P), "--localpair", "--maxiterate",  "16", "--out", out_path, in_path])
 
 def MAFFT_P(in_path, out_path):
-    subp.call(["mafft", "--thread",  str(args.P), "--maxiterate",  "100", "--out", out_path, in_path])
+    mafft_cmd = 'mafft --thread %s --maxiterate 100 --out %s %s' %(str(args.P), out_path, in_path)
+    os.system(mafft_cmd)
+    #subp.call(["mafft", "--thread",  str(args.P), "--maxiterate",  "100", "--out", out_path, in_path])
+
+def runTarget_helper(args):
+    return runTarget(*args)
 
 def runTarget(query, blast_out, blast_file_out, path):
     #make output directory
-    subp.call(["mkdir", blast_out])
-    
+    #subp.call(["mkdir", blast_out])
+    os.mkdir(blast_out)
+
     #make command log file
     log_out = open(os.path.join(blast_out, "log.txt"), "w")
     print>>log_out, " ".join(sys.argv)
@@ -96,7 +121,7 @@ def runTarget(query, blast_out, blast_file_out, path):
     elif args.Type == 'prot':
         print "Using TBLASTN\n"
         TBLASTN(query, blast_file_out)
-        
+ 
     #make svg drawing(s)
     print "Making svg image of blast results\n"
     Blast_draw(blast_file_out)
@@ -110,14 +135,14 @@ def runTarget(query, blast_out, blast_file_out, path):
         
     if args.S == 'Blast':
         return
-    
+
     blast_in = str(blast_file_out) + ".blast"
     PHI_out = str(blast_file_out)
     print "Blast in:", blast_in + "  PHI out:", PHI_out
     print "Running PHI"
-    PHI(blast_in, PHI_out)
+    PHI(blast_in, PHI_out, query)
     print "PHI finished!\n"
-    
+   
     filter_list = str(blast_file_out) + ".list"
     #print "filter list path:", filter_list
     filter_path = os.path.join(path, "parse_target_list.py")
@@ -126,12 +151,15 @@ def runTarget(query, blast_out, blast_file_out, path):
     #print args.E
     if args.E == True:
         #print "E is true!"
-        subp.call(["cp", filter_list, filter_list + "_ori.list"])
-        subp.call(["python", filter_path, filter_list, str(args.W)])
+        #subp.call(["cp", filter_list, filter_list + "_ori.list"])
+        #subp.call(["python", filter_path, filter_list, str(args.W)])
+        os.system('cp %s %s_ori.list' %(filter_list, filter_list))
+        os.system('python %s %s %s' %(filter_path, filter_list, str(args.W)))
         time.sleep(1)
         PHI_draw(filter_list + "_ori", Type)
         img_convert(filter_list + "_ori" + ".tcf_drawer.svg", filter_list + "_ori" + ".tcf_drawer.pdf")
-    
+#error end
+
     #make svg image of PHI homologs
     print "Making svg image of homologs\n"
     PHI_draw(PHI_out, Type)
@@ -175,7 +203,8 @@ def runTarget(query, blast_out, blast_file_out, path):
     
     if args.S == 'PHI':
         return
-    
+
+ 
     if copies >= 2: 
         filter_list = []
         in_list = []
@@ -293,9 +322,9 @@ def runTarget(query, blast_out, blast_file_out, path):
             
                 #Can only limit FastTree processor use through OMP_NUM_THREADS. Otherwise, it will use all processors available.
                 current_env = os.environ.copy()
-                #print "current_env before change:  ", current_env
+                print "current_env before change:  ", current_env
                 current_env['OMP_NUM_THREADS'] = str(args.P)
-                #print "OMP_NUM_THREADS after change:  ", current_env['OMP_NUM_THREADS'], "\n\n"
+                print "OMP_NUM_THREADS after change:  ", current_env['OMP_NUM_THREADS'], "\n\n"
 
             
                 if args.Type == 'nucl':
@@ -308,25 +337,33 @@ def runTarget(query, blast_out, blast_file_out, path):
                     print "\nFastTreeMP finished.\n"
 
                 print "Converting output tree file to eps image\n"
-                out = open(tree_out + ".eps", "w") #open output file for redirected stdout
+                #out = open(tree_out + ".eps", "w") #open output file for redirected stdout
                 #print "Eps image out path: ", out
             
                 if copies > 45:
                     height = copies * 13
                     width = round(height/3)
                     print "Image height: ", height, "\twidth: ", width, "\n"
-                    subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", "-m", "40", tree_out], stdout=out)
+                    #subp.call(["treebest",  "export", "-y", str(height), "-x", str(width), "-b", "4.5", "-f", "13", "-m", "40", tree_out], stdout=out)
+                    treebest_cmd = 'treebest export -y %s -x %s -b 4.5 -f 13 -m 40 %s > %s.eps' %(str(height), str(width), tree_out, tree_out)
+                    os.system(treebest_cmd)
                 else:
-                    subp.call(["treebest",  "export", tree_out], stdout=out)
-                out.close() #close output file
+                    #subp.call(["treebest",  "export", tree_out], stdout=out)
+                    treebest_cmd = 'treebest export %s > %s.eps' %(tree_out, tree_out)
+                    os.system(treebest_cmd)
+                #out.close() #close output file
 
                 print "Coverting eps image to pdf\n"
-                subp.call(["convert", tree_out + ".eps", tree_out + ".pdf"])
+                #subp.call(["convert", tree_out + ".eps", tree_out + ".pdf"])
+                os.system('convert %s.eps %s.pdf' %(tree_out, tree_out))
                 c += 1
     else:
         print "Less than two copies found. Multiple alignment and tree building will not be performed.\n"
-    
-    
+    sys.stdout.flush() # used for output stdout from subprocess
+    os.unlink(query)
+    return 1
+
+ 
 def standardize_flanks(flank_file_path, index_dict, flank, genome_dict2):
     """Find the index position of the start and end of the DNA match in the sequences with flanks. If either flank is not as long as the flank setting, add N's to reach that number. If the index is -1 (not found), go back into the genome sequence to get the correct locus"""
     
@@ -434,6 +471,8 @@ parser.add_argument("-f", metavar="Filter length (query length * X)", type=float
 
 parser.add_argument("-P", metavar="Processors", type=int, default=1, help="The number of processors to use for Blast, Mafft, and FastTree steps. All other steps use 1 processor. The programs are not multi-node ready, so the number of processors is limited to that available to one computer/node.")
 
+parser.add_argument("-C", metavar="Processors", type=int, default=1, help="Use multiprocess to run multi jobs at same time for RunTarget function. If -C was set -P should set to 1 or use -P*-C to determine how many cpu you use. -P 4 and -C 4 will need 16 cpus to run")
+
 parser.add_argument("-E", action='store_true', default="False", help="Require hits to match the ends of the query sequence. The -W flag modifies the distance from the ends a hit can be and satisfy this flag. Using this flag alone is equivalent to '-E -W 0'.")
 
 parser.add_argument("-W", metavar="Window size", type=int, default=0, help="Maximum distance away from query ends for a hit to be considered matching the ends. Only used if the -E flag is set. The default value of 0 requires a hit to start and stop at the first and last characters of the query. A value of 4 would consider hits starting within the first 5 and ending within the last 5 characters of the query as matches to the ends.")
@@ -520,7 +559,8 @@ if args.q and args.i == 's' or args.i == 'g':
 else:
     out_dir = args.o + args.Run_Name + "_" + now.strftime("%Y_%m_%d_%H%M%S")
     try:
-        subp.call(["mkdir", out_dir])
+        #subp.call(["mkdir", out_dir])
+        os.mkdir(out_dir)
     except:
         pass
 
@@ -528,9 +568,11 @@ else:
 #-----------Make BLAST database & Run custom indexer-----------------------------
 if args.DB:
     print "\nRunning formatdb\n"
-    subp.call(["formatdb", "-i", args.genome,"-p", "F", "-o", "T", "-n", args.genome])
+    os.system('formatdb -i %s -p F -o T -n %s' %(args.genome, args.genome))
+    #subp.call(["formatdb", "-i", args.genome,"-p", "F", "-o", "T", "-n", args.genome])
     print "Running custom indexer\n"
-    subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
+    os.system('perl %s/reads_indexer.pl -i %s' %(path, args.genome))
+    #subp.call(["perl", path + "reads_indexer.pl", "-i", args.genome])
 else:
     print "\n", args.genome
 
@@ -579,6 +621,7 @@ elif args.q and args.i == 'mi':
     p = 0
 
     #Run pipeline on each file with it's own output directory in the main output directory
+    parameter = []
     for fasta2 in new_files:
         query = fasta2
         print "Query:", fasta2
@@ -589,8 +632,16 @@ elif args.q and args.i == 'mi':
         
         #set output filename
         blast_file_out = os.path.join(blast_out, file_name)
-        runTarget(fasta2, blast_out, blast_file_out, path)
-        os.unlink(fasta2)
+        parameter.append([fasta2, blast_out, blast_file_out, path])
+        #runTarget(fasta2, blast_out, blast_file_out, path)
+        #os.unlink(fasta2)
+        #p += 1
+        #print "TARGeT has processed ", p, " of ", count, " subfiles"
+    cpu  = args.C
+    pool = mp.Pool(cpu)
+    queue = mp.Queue()
+    target_imap_it = pool.map(runTarget_helper, tuple(parameter))
+    for target_x in target_imap_it:
         p += 1
         print "TARGeT has processed ", p, " of ", count, " subfiles"
 
@@ -647,7 +698,8 @@ elif args.d and args.i == 'mi':
         base_dir = os.path.normpath(os.path.join(out_dir, os.path.splitext(f)[0]))
         
         #make the subdirectory
-        subp.call(["mkdir", base_dir])
+        #subp.call(["mkdir", base_dir])
+        os.mkdir(base_dir)
 
         #setup full path to fasta file for splitting
         in_full = os.path.normpath(os.path.join(args.d, f))
